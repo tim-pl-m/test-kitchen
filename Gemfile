@@ -2,6 +2,9 @@
 source "https://rubygems.org"
 gemspec
 
+gem "winrm", github: "winrb/winrm", branch: "winrm-v2"
+gem "winrm-fs", github: "winrb/winrm-fs", branch: "winrm-v2"
+
 group :guard do
   gem "guard-minitest"
   gem "guard-cucumber", "~> 1.4"
