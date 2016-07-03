@@ -220,7 +220,7 @@ describe Kitchen::Transport::Winrm do
         config[:password] = "pass_from_config"
 
         klass.expects(:new).with do |hash|
-          hash[:pass] == "pass_from_config"
+          hash[:password] == "pass_from_config"
         end
 
         make_connection
@@ -231,7 +231,7 @@ describe Kitchen::Transport::Winrm do
         config[:password] = "pass_from_config"
 
         klass.expects(:new).with do |hash|
-          hash[:pass] == "pass_from_state"
+          hash[:password] == "pass_from_state"
         end
 
         make_connection
@@ -629,26 +629,26 @@ describe Kitchen::Transport::Winrm::Connection do
   let(:logger)          { Logger.new(logged_output) }
 
   let(:options) do
-    { :logger => logger, :user => "me", :pass => "haha",
+    { :logger => logger, :user => "me", :password => "haha",
       :endpoint => "http://foo:5985/wsman", :winrm_transport => :plaintext,
       :kitchen_root => "/i/am/root", :instance_name => "coolbeans",
       :rdp_port => "rdpyeah" }
   end
 
   let(:info) do
-    copts = { :user => "me", :pass => "haha" }
-    "plaintext::http://foo:5985/wsman<#{copts}>"
+    copts = { :user => "me", :password => "haha", :endpoint => "http://foo:5985/wsman", :winrm_transport => :plaintext }
+    "<#{copts}>"
   end
 
   let(:winrm_session) do
     s = mock("winrm_session")
-    s.responds_like_instance_of(::WinRM::WinRMWebService)
+    s.responds_like_instance_of(::WinRM::Connection)
     s
   end
 
   let(:executor) do
     s = mock("command_executor")
-    s.responds_like_instance_of(WinRM::CommandExecutor)
+    s.responds_like_instance_of(WinRM::Shells::Powershell)
     s
   end
 
@@ -669,7 +669,7 @@ describe Kitchen::Transport::Winrm::Connection do
   end
 
   before do
-    WinRM::WinRMWebService.stubs(:new).returns(winrm_session)
+    WinRM::Connection.stubs(:new).returns(winrm_session)
     winrm_session.stubs(:logger=)
     logger.level = Logger::DEBUG
   end
@@ -684,11 +684,11 @@ describe Kitchen::Transport::Winrm::Connection do
     end
 
     before do
-      winrm_session.stubs(:create_executor).returns(executor)
       transporter.stubs(:upload)
-      elevated_runner.stubs(:powershell_elevated).returns(response)
+      elevated_runner.stubs(:run).returns(response)
+      winrm_session.stubs(:shell).with(:powershell).returns(executor)
       executor.stubs(:close)
-      executor.stubs(:run_powershell_script).
+      executor.stubs(:run).
         with("doit").yields("ok\n", nil).returns(response)
     end
 
@@ -724,7 +724,7 @@ describe Kitchen::Transport::Winrm::Connection do
   describe "#execute" do
 
     before do
-      winrm_session.stubs(:create_executor).returns(executor)
+      winrm_session.stubs(:shell).with(:powershell).returns(executor)
     end
 
     describe "for a successful command" do
@@ -740,7 +740,7 @@ describe Kitchen::Transport::Winrm::Connection do
       end
 
       before do
-        executor.expects(:run_powershell_script).
+        executor.expects(:run).
           with("doit").yields("ok\n", nil).returns(response)
       end
 
@@ -790,24 +790,29 @@ describe Kitchen::Transport::Winrm::Connection do
         ])
         o
       end
+      let(:elevated_runner) do
+        r = mock("elevated_runner")
+        r.responds_like_instance_of(WinRM::Shells::Elevated)
+        r
+      end
 
       before do
         options[:elevated] = true
-        WinRM::Elevated::Runner.stubs(:new).with(executor).returns(elevated_runner)
+        winrm_session.stubs(:shell).with(:elevated).returns(elevated_runner)
       end
 
       describe "elevated user is not login user" do
         before do
           options[:elevated_username] = "username"
           options[:elevated_password] = "password"
-          executor.expects(:run_powershell_script).
+          executor.expects(:run).
             with("$env:temp").returns(env_temp_response)
-          elevated_runner.expects(:powershell_elevated).
+          elevated_runner.expects(:run).
             with(
-              "$env:temp='temp_dir';doit",
-              options[:elevated_username],
-              options[:elevated_password]
+              "$env:temp='temp_dir';doit"
             ).yields("ok\n", nil).returns(response)
+          elevated_runner.expects(:username=).with("username")
+          elevated_runner.expects(:password=).with("password")
         end
 
         it "logger captures stdout" do
@@ -817,54 +822,22 @@ describe Kitchen::Transport::Winrm::Connection do
         end
       end
 
-      describe "elevator user is login user" do
+      describe "elevated user is login user" do
         before do
           options[:elevated_username] = options[:user]
-          options[:elevated_password] = options[:pass]
-          elevated_runner.expects(:powershell_elevated).
+          options[:elevated_password] = options[:password]
+          elevated_runner.expects(:run).
             with(
-              "doit",
-              options[:elevated_username],
-              options[:elevated_password]
+              "doit"
             ).yields("ok\n", nil).returns(response)
+          elevated_runner.expects(:username=).with(options[:user])
+          elevated_runner.expects(:password=).with(options[:password])
         end
 
         it "logger captures stdout" do
           connection.execute("doit")
 
           logged_output.string.must_match(/^ok$/)
-        end
-      end
-    end
-
-    describe "long command" do
-      let(:command) { %{Write-Host "#{"a" * 4000}"} }
-
-      let(:connection) do
-        Kitchen::Transport::WinRMConnectionDummy.new(options)
-      end
-
-      let(:response) do
-        o = WinRM::Output.new
-        o[:exitcode] = 0
-        o[:data].concat([
-          { :stdout => "ok\r\n" },
-          { :stderr => "congrats\r\n" }
-        ])
-        o
-      end
-
-      before do
-        executor.expects(:run_powershell_script).with(
-          %{powershell -ExecutionPolicy Bypass -File "$env:TEMP/coolbeans-long_script.ps1"}
-        ).yields("ok\n", nil).returns(response)
-      end
-
-      it "uploads the long command" do
-        with_fake_fs do
-          connection.execute(command)
-
-          connection.saved_command.must_equal command
         end
       end
     end
@@ -899,7 +872,7 @@ describe Kitchen::Transport::Winrm::Connection do
       end
 
       before do
-        executor.expects(:run_powershell_script).
+        executor.expects(:run).
           with("doit").yields("nope\n", nil).returns(response)
       end
 
@@ -1002,7 +975,7 @@ MSG
 
           options[:connection_retries] = 3
           options[:connection_retry_sleep] = 7
-          winrm_session.stubs(:create_executor).raises(k)
+          winrm_session.stubs(:shell).with(:powershell).raises(k)
         end
 
         it "reraises the #{klass} exception" do
@@ -1160,7 +1133,7 @@ MSG
       end
 
       it "won't set the pass if not given" do
-        options.delete(:pass)
+        options.delete(:password)
 
         args.wont_match regexify(" -p haha ")
       end
@@ -1183,7 +1156,7 @@ MSG
   describe "#upload" do
 
     before do
-      winrm_session.stubs(:create_executor).returns(executor)
+      winrm_session.stubs(:shell).with(:powershell).returns(executor)
 
       WinRM::FS::Core::FileTransporter.stubs(:new).
         with(executor).returns(transporter)
@@ -1234,7 +1207,7 @@ MSG
   describe "#wait_until_ready" do
 
     before do
-      winrm_session.stubs(:create_executor).returns(executor)
+      winrm_session.stubs(:shell).with(:powershell).returns(executor)
       options[:max_wait_until_ready] = 300
     end
 
@@ -1248,7 +1221,7 @@ MSG
       end
 
       before do
-        executor.expects(:run_powershell_script).
+        executor.expects(:run).
           with("Write-Host '[WinRM] Established\n'").returns(response)
       end
 
@@ -1267,7 +1240,7 @@ MSG
       end
 
       before do
-        executor.expects(:run_powershell_script).
+        executor.expects(:run).
           with("Write-Host '[WinRM] Established\n'").returns(response)
       end
 
