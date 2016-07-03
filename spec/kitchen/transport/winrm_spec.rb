@@ -124,6 +124,7 @@ describe Kitchen::Transport::Winrm do
       before do
         config[:hostname] = "here"
         config[:kitchen_root] = "/i/am/root"
+        config[:password] = "password"
       end
 
       it "returns a Kitchen::Transport::Winrm::Connection object" do
@@ -826,9 +827,11 @@ describe Kitchen::Transport::Winrm::Connection do
         before do
           options[:elevated_username] = options[:user]
           options[:elevated_password] = options[:password]
+          executor.expects(:run).
+            with("$env:temp").returns(env_temp_response)
           elevated_runner.expects(:run).
             with(
-              "doit"
+              "$env:temp='temp_dir';doit"
             ).yields("ok\n", nil).returns(response)
           elevated_runner.expects(:username=).with(options[:user])
           elevated_runner.expects(:password=).with(options[:password])

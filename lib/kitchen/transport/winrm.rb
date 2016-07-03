@@ -84,18 +84,14 @@ module Kitchen
       class Connection < Kitchen::Transport::Base::Connection
         # (see Base::Connection#close)
         def close
-          close_session(unelevated_session)
-          close_session(elevated_session)
-        end
-
-        def close_session(session)
-          return if @session.nil?
-
-          session.close
-        ensure
-          @file_transporter = nil
-          @session = nil
-          @elevated_runner = nil
+          begin
+            @unelevated_session.close if @unelevated_session
+            @elevated_session.close if @elevated_session
+          ensure
+            @unelevated_session = nil
+            @elevated_session = nil
+            @file_transporter = nil
+          end
         end
 
         # (see Base::Connection#execute)
@@ -214,7 +210,12 @@ module Kitchen
         #   script and the standard error stream
         # @api private
         def execute_with_exit_code(command)
-          session = elevated ? elevated_session : unelevated_session
+          if elevated
+            session = elevated_session
+            command = "$env:temp='#{unelevated_temp_dir}';#{command}"
+          else
+            session = unelevated_session
+          end
 
           response = session.run(command) do |stdout, _|
             logger << stdout if stdout
@@ -223,7 +224,7 @@ module Kitchen
         end
 
         def unelevated_temp_dir
-          @unelevated_temp_dir ||= unelevated_session.run_powershell_script("$env:temp").stdout.chomp
+          @unelevated_temp_dir ||= unelevated_session.run("$env:temp").stdout.chomp
         end
 
         # @return [Winrm::FileTransporter] a file transporter
