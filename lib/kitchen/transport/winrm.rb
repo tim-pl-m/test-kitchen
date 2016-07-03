@@ -84,6 +84,11 @@ module Kitchen
       class Connection < Kitchen::Transport::Base::Connection
         # (see Base::Connection#close)
         def close
+          close_session(unelevated_session)
+          close_session(elevated_session)
+        end
+
+        def close_session(session)
           return if @session.nil?
 
           session.close
@@ -134,7 +139,7 @@ module Kitchen
         # (see Base::Connection#wait_until_ready)
         def wait_until_ready
           delay = 3
-          session(
+          unelevated_session(
             :retry_limit => max_wait_until_ready / delay,
             :retry_delay => delay
           )
@@ -209,34 +214,22 @@ module Kitchen
         #   script and the standard error stream
         # @api private
         def execute_with_exit_code(command)
-          if elevated
-            unless options[:elevated_username] == options[:user]
-              command = "$env:temp='#{unelevated_temp_dir}';#{command}"
-            end
-            response = elevated_runner.powershell_elevated(
-              command,
-              options[:elevated_username],
-              options[:elevated_password]
-            ) do |stdout, _|
-              logger << stdout if stdout
-            end
-          else
-            response = session.run(command) do |stdout, _|
-              logger << stdout if stdout
-            end
-          end
+          session = elevated ? elevated_session : unelevated_session
 
+          response = session.run(command) do |stdout, _|
+            logger << stdout if stdout
+          end
           [response[:exitcode], response.stderr]
         end
 
         def unelevated_temp_dir
-          @unelevated_temp_dir ||= session.run_powershell_script("$env:temp").stdout.chomp
+          @unelevated_temp_dir ||= unelevated_session.run_powershell_script("$env:temp").stdout.chomp
         end
 
         # @return [Winrm::FileTransporter] a file transporter
         # @api private
         def file_transporter
-          @file_transporter ||= WinRM::FS::Core::FileTransporter.new(session)
+          @file_transporter ||= WinRM::FS::Core::FileTransporter.new(unelevated_session)
         end
 
         # (see Base#init_options)
@@ -314,35 +307,40 @@ module Kitchen
         # the first time.
         #
         # @param retry_options [Hash] retry options for the initial connection
-        # @return [Winrm::Shell] the command shell session
+        # @return [Winrm::Shells::Powershell] the command shell session
         # @api private
-        def session(retry_options = {})
-          @session ||= service(retry_options).shell(:powershell)
+        def unelevated_session(retry_options = {})
+          @unelevated_session ||= connection(retry_options).shell(:powershell)
         end
 
-        # Creates the elevated runner for running elevated commands
+        # Creates an elevated session for running commands via a scheduled task
         #
-        # @return [Winrm::Elevated::Runner] the elevated runner
+        # @return [Winrm::Shells::Elevated] the elevated shell
         # @api private
-        def elevated_runner
-          @elevated_runner ||= WinRM::Elevated::Runner.new(session)
+        def elevated_session(retry_options = {})
+          @elevated_session ||= begin
+            connection(retry_options).shell(:elevated).tap do |shell|
+              shell.username = options[:elevated_username]
+              shell.password = options[:elevated_password]
+            end
+          end
         end
 
-        # Creates a winrm web service instance
+        # Creates a winrm Connection instance
         #
         # @param retry_options [Hash] retry options for the initial connection
-        # @return [Winrm::Connection] the winrm web service
+        # @return [Winrm::Connection] the winrm connection
         # @api private
-        def service(retry_options = {})
-          @service ||= begin
+        def connection(retry_options = {})
+          @connection ||= begin
             opts = {
               :retry_limit => connection_retries.to_i,
               :retry_delay   => connection_retry_sleep.to_i
             }.merge(retry_options)
 
-            svc = ::WinRM::Connection.new(options.merge(opts))
-            svc.logger = logger
-            svc
+            ::WinRM::Connection.new(options.merge(opts)).tap do |conn|
+              conn.logger = logger
+            end
           end
         end
 
