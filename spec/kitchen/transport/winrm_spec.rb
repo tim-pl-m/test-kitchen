@@ -661,7 +661,7 @@ describe Kitchen::Transport::Winrm::Connection do
 
   let(:elevated_runner) do
     r = mock("elevated_runner")
-    r.responds_like_instance_of(WinRM::Elevated::Runner)
+    r.responds_like_instance_of(WinRM::Shells::Elevated)
     r
   end
 
@@ -689,8 +689,11 @@ describe Kitchen::Transport::Winrm::Connection do
       elevated_runner.stubs(:run).returns(response)
       winrm_session.stubs(:shell).with(:powershell).returns(executor)
       executor.stubs(:close)
+      elevated_runner.stubs(:close)
       executor.stubs(:run).
         with("doit").yields("ok\n", nil).returns(response)
+      executor.stubs(:run).
+        with("$env:temp").yields("ok\n", nil).returns(response)
     end
 
     it "only closes the shell once for multiple calls" do
@@ -712,9 +715,10 @@ describe Kitchen::Transport::Winrm::Connection do
 
     it "clears the elevated_runner executor" do
       options[:elevated] = true
-      options[:elevated_username] = options[:user]
-      options[:elevated_password] = options[:pass]
-      WinRM::Elevated::Runner.expects(:new).returns(elevated_runner).twice
+      elevated_runner.stubs(:username=)
+      elevated_runner.stubs(:password=)
+      elevated_runner.expects(:close).once
+      winrm_session.expects(:shell).with(:elevated).returns(elevated_runner).twice
 
       connection.execute("doit")
       connection.close
