@@ -637,7 +637,12 @@ describe Kitchen::Transport::Winrm::Connection do
   end
 
   let(:info) do
-    copts = { :user => "me", :password => "haha", :endpoint => "http://foo:5985/wsman", :winrm_transport => :plaintext }
+    copts = {
+      :user => "me",
+      :password => "haha",
+      :endpoint => "http://foo:5985/wsman",
+      :winrm_transport => :plaintext
+    }
     "<#{copts}>"
   end
 

@@ -84,14 +84,12 @@ module Kitchen
       class Connection < Kitchen::Transport::Base::Connection
         # (see Base::Connection#close)
         def close
-          begin
-            @unelevated_session.close if @unelevated_session
-            @elevated_session.close if @elevated_session
-          ensure
-            @unelevated_session = nil
-            @elevated_session = nil
-            @file_transporter = nil
-          end
+          @unelevated_session.close if @unelevated_session
+          @elevated_session.close if @elevated_session
+        ensure
+          @unelevated_session = nil
+          @elevated_session = nil
+          @file_transporter = nil
         end
 
         # (see Base::Connection#execute)
