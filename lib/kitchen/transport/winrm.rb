@@ -379,12 +379,12 @@ module Kitchen
           :connection_retries => data[:connection_retries],
           :connection_retry_sleep => data[:connection_retry_sleep],
           :max_wait_until_ready => data[:max_wait_until_ready],
-          :winrm_transport => data[:winrm_transport],
+          :transport => data[:winrm_transport],
           :elevated => data[:elevated],
           :elevated_username => data[:elevated_username] || data[:username],
           :elevated_password => elevated_password
         }
-        opts.merge!(additional_transport_args(opts[:winrm_transport]))
+        opts.merge!(additional_transport_args(opts[:transport]))
         opts
       end
 
