@@ -8,7 +8,7 @@ Feature: Add Test Kitchen support to an existing project
 
   @spawn
   Scenario: Displaying help
-    When I run `bundle install && kitchen help init`
+    When I run `kitchen help init`
     Then the output should contain:
     """
     Usage:
