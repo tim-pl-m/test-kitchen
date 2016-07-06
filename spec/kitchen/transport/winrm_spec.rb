@@ -156,7 +156,7 @@ describe Kitchen::Transport::Winrm do
 
       it "sets the :winrm_transport to :negotiate" do
         klass.expects(:new).with do |hash|
-          hash[:winrm_transport] == :negotiate
+          hash[:transport] == :negotiate
         end
 
         make_connection
@@ -326,7 +326,7 @@ describe Kitchen::Transport::Winrm do
         config[:winrm_transport] = "ssl"
 
         klass.expects(:new).with do |hash|
-          hash[:winrm_transport] == :ssl
+          hash[:transport] == :ssl
         end
 
         make_connection
@@ -393,7 +393,7 @@ describe Kitchen::Transport::Winrm do
         it "sets :winrm_transport to negotiate" do
 
           klass.expects(:new).with do |hash|
-            hash[:winrm_transport] == :negotiate &&
+            hash[:transport] == :negotiate &&
               hash[:disable_sspi] == false &&
               hash[:basic_auth_only] == false
           end
