@@ -2,7 +2,6 @@
 source "https://rubygems.org"
 gemspec
 
-
 gem "train", :github => "chef/train", :branch => "winrm-v2"
 gem "winrm", :github => "winrb/winrm", :branch => "winrm-v2"
 gem "winrm-fs", :github => "winrb/winrm-fs", :branch => "winrm-v2"
