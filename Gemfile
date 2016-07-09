@@ -17,7 +17,7 @@ end
 
 group :integration do
   gem "berkshelf", "~> 4.3"
-  gem 'kitchen-inspec', :github => "mwrock/kitchen-inspec", :branch => "winrm-v2"
+  gem "kitchen-inspec", :github => "mwrock/kitchen-inspec", :branch => "winrm-v2"
 end
 
 group :test do
