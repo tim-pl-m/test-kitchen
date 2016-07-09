@@ -2,6 +2,7 @@
 source "https://rubygems.org"
 gemspec
 
+
 gem "train", :github => "chef/train", :branch => "winrm-v2"
 gem "winrm", :github => "winrb/winrm", :branch => "winrm-v2"
 gem "winrm-fs", :github => "winrb/winrm-fs", :branch => "winrm-v2"
@@ -16,7 +17,7 @@ end
 
 group :integration do
   gem "berkshelf", "~> 4.3"
-  gem "kitchen-inspec", "~> 0.12.5"
+  gem 'kitchen-inspec', :github => "mwrock/kitchen-inspec", :branch => "winrm-v2"
 end
 
 group :test do
