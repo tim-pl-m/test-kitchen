@@ -684,8 +684,8 @@ describe Kitchen::Transport::Winrm::Connection do
 
     let(:response) do
       o = WinRM::Output.new
-      o[:exitcode] = 0
-      o[:data].concat([{ :stdout => "ok\r\n" }])
+      o.exitcode = 0
+      o << { :stdout => "ok\r\n" }
       o
     end
 
@@ -741,11 +741,9 @@ describe Kitchen::Transport::Winrm::Connection do
 
       let(:response) do
         o = WinRM::Output.new
-        o[:exitcode] = 0
-        o[:data].concat([
-          { :stdout => "ok\r\n" },
-          { :stderr => "congrats\r\n" }
-        ])
+        o.exitcode = 0
+        o << { :stdout => "ok\r\n" }
+        o << { :stderr => "congrats\r\n" }
         o
       end
 
@@ -785,19 +783,15 @@ describe Kitchen::Transport::Winrm::Connection do
     describe "elevated command" do
       let(:response) do
         o = WinRM::Output.new
-        o[:exitcode] = 0
-        o[:data].concat([
-          { :stdout => "ok\r\n" },
-          { :stderr => "congrats\r\n" }
-        ])
+        o.exitcode = 0
+        o << { :stdout => "ok\r\n" }
+        o << { :stderr => "congrats\r\n" }
         o
       end
       let(:env_temp_response) do
         o = WinRM::Output.new
-        o[:exitcode] = 0
-        o[:data].concat([
-          { :stdout => "temp_dir" }
-        ])
+        o.exitcode = 0
+        o << { :stdout => "temp_dir" }
         o
       end
       let(:elevated_runner) do
@@ -858,28 +852,26 @@ describe Kitchen::Transport::Winrm::Connection do
 
       let(:response) do
         o = WinRM::Output.new
-        o[:exitcode] = 1
-        o[:data].concat([
-          { :stderr => "#< CLIXML\r\n" },
-          { :stderr => "<Objs Version=\"1.1.0.1\" xmlns=\"http://schemas." },
-          { :stderr => "microsoft.com/powershell/2004/04\"><S S=\"Error\">" },
-          { :stderr => "doit : The term 'doit' is not recognized as the " },
-          { :stderr => "name of a cmdlet, function, _x000D__x000A_</S>" },
-          { :stderr => "<S S=\"Error\">script file, or operable program. " },
-          { :stderr => "Check the spelling of" },
-          { :stderr => "the name, or if a path _x000D__x000A_</S><S S=\"E" },
-          { :stderr => "rror\">was included, verify that the path is corr" },
-          { :stderr => "ect and try again._x000D__x000A_</S><S S=\"Error" },
-          { :stderr => "\">At line:1 char:1_x000D__x000A_</S><S S=\"Error" },
-          { :stderr => "\">+ doit_x000D__x000A_</S><S S=\"Error\">+ ~~~~_" },
-          { :stderr => "x000D__x000A_</S><S S=\"Error\">    + CategoryInf" },
-          { :stderr => "o          : ObjectNotFound: (doit:String) [], Co" },
-          { :stderr => "mmandNotFoun _x000D__x000A_</S><S S=\"Error\">   " },
-          { :stderr => "dException_x000D__x000A_</S><S S=\"Error\">    + " },
-          { :stderr => "FullyQualifiedErrorId : CommandNotFoundException_" },
-          { :stderr => "x000D__x000A_</S><S S=\"Error\"> _x000D__x000A_</" },
-          { :stderr => "S></Objs>" }
-        ])
+        o.exitcode = 1
+        o << { :stderr => "#< CLIXML\r\n" }
+        o << { :stderr => "<Objs Version=\"1.1.0.1\" xmlns=\"http://schemas." }
+        o << { :stderr => "microsoft.com/powershell/2004/04\"><S S=\"Error\">" }
+        o << { :stderr => "doit : The term 'doit' is not recognized as the " }
+        o << { :stderr => "name of a cmdlet, function, _x000D__x000A_</S>" }
+        o << { :stderr => "<S S=\"Error\">script file, or operable program. " }
+        o << { :stderr => "Check the spelling of" }
+        o << { :stderr => "the name, or if a path _x000D__x000A_</S><S S=\"E" }
+        o << { :stderr => "rror\">was included, verify that the path is corr" }
+        o << { :stderr => "ect and try again._x000D__x000A_</S><S S=\"Error" }
+        o << { :stderr => "\">At line:1 char:1_x000D__x000A_</S><S S=\"Error" }
+        o << { :stderr => "\">+ doit_x000D__x000A_</S><S S=\"Error\">+ ~~~~_" }
+        o << { :stderr => "x000D__x000A_</S><S S=\"Error\">    + CategoryInf" }
+        o << { :stderr => "o          : ObjectNotFound: (doit:String) [], Co" }
+        o << { :stderr => "mmandNotFoun _x000D__x000A_</S><S S=\"Error\">   " }
+        o << { :stderr => "dException_x000D__x000A_</S><S S=\"Error\">    + " }
+        o << { :stderr => "FullyQualifiedErrorId : CommandNotFoundException_" }
+        o << { :stderr => "x000D__x000A_</S><S S=\"Error\"> _x000D__x000A_</" }
+        o << { :stderr => "S></Objs>" }
         o
       end
 
@@ -1227,8 +1219,8 @@ MSG
 
       let(:response) do
         o = WinRM::Output.new
-        o[:exitcode] = 0
-        o[:data].concat([{ :stdout => "[WinRM] Established\r\n" }])
+        o.exitcode = 0
+        o << { :stdout => "[WinRM] Established\r\n" }
         o
       end
 
@@ -1246,8 +1238,8 @@ MSG
 
       let(:response) do
         o = WinRM::Output.new
-        o[:exitcode] = 42
-        o[:data].concat([{ :stderr => "Ah crap.\r\n" }])
+        o.exitcode = 42
+        o << { :stderr => "Ah crap.\r\n" }
         o
       end
 

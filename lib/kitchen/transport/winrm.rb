@@ -218,7 +218,7 @@ module Kitchen
           response = session.run(command) do |stdout, _|
             logger << stdout if stdout
           end
-          [response[:exitcode], response.stderr]
+          [response.exitcode, response.stderr]
         end
 
         def unelevated_temp_dir
