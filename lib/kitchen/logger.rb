@@ -295,15 +295,15 @@ module Kitchen
     # @api private
     def stdout_logger(stdout, color, colorize)
       logger = StdoutLogger.new(stdout)
-      if colorize
+      #if colorize
         logger.formatter = proc do |_severity, _datetime, _progname, msg|
           Color.colorize("#{msg}", color).concat("\n")
         end
-      else
-        logger.formatter = proc do |_severity, _datetime, _progname, msg|
-          msg.concat("\n")
-        end
-      end
+      #else
+      #  logger.formatter = proc do |_severity, _datetime, _progname, msg|
+      #    msg.concat("\n")
+      #  end
+      #end
       logger
     end
 
