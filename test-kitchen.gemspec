@@ -6,7 +6,8 @@ require "English"
 
 Gem::Specification.new do |gem|
   gem.name          = "test-kitchen"
-  gem.version       = Kitchen::VERSION
+  #gem.version       = Kitchen::VERSION
+  gem.version       = "1.10.0c"
   gem.license       = "Apache 2.0"
   gem.authors       = ["Fletcher Nichol"]
   gem.email         = ["fnichol@nichol.ca"]
