@@ -101,7 +101,9 @@ module Kitchen
     #
     # @return [true,false] is there a tty?
     def tty?
-      $stdout.tty?
+      #TODO consider flag
+      #$stdout.tty?
+      true
     end
 
     # Determine the default log level from an environment variable, if it is
